@@ -1,0 +1,247 @@
+/* Lazar Iulian
+ * 325CA
+ * PC - Tema 3
+ */ 
+
+	Pentru a retine datele despre fiecare client, am creat in server o
+  structura avand urmatoarele campuri: 
+	- active ( la conectarea clientului devine 1, initial fiind 0)
+	- name - numele clientului
+	- ip_addr - adresa ip a clientului
+	- socket - socketul pe care e conectat la server
+	- port
+	- correct_name (variabila pe care o folosesc la trimiterea primului 
+			mesaj, cel in care verific daca numele este duplicat)
+	- time - timpul conectarii clientului la server
+	- files - fisierele partajate de client
+	- num_files_shared - numarul de fisiere partajate
+	- port_listening - portul pe care asculta clientului
+
+	Portul pe care asculta fiecare client il voi da in linia de comanda,
+  ca al patrulea argument al clientului (primul argument - nume, al doilea - 
+  ip-ul serverului, al treilea - portul de conectare la server, al patrulea - 
+  portul de ascultare al clientului).
+  
+	"tasks[]" reprezinta lista de comenzi posibile primite de la client spre
+  server (tasks[0] - listclients, tasks[1] - infoclient, tasks[2] - message, 
+  tasks[3] - sharefile, tasks[4] - unsharefile, tasks[5] - getshare, 
+  tasks[6] - quit, tasks[7] - getfile).
+  
+	In client, voi crea un socket pentru a putea comunica cu serverul. Un
+  alt socket il voi folosi pentru ascultare (sockfd_listen).
+  
+	Tot in client, pentru comanda "sharefile nume_fisier", verific daca 
+  exista fisierul. ( cu functia verifica_fisier). 
+  
+	Voi trimite prima data de la client la server un mesaj de forma:
+  "name:nume_client:port_de_ascultare", in care voi anunta serverul ca un client
+  cu numele "nume_client" si cu portul de ascultare "port_de_ascultare" doreste
+  sa se conecteze. 
+  
+	In server, voi verifica daca numele clientului exista deja.
+	
+	Daca exista, atunci voi trimite la server un mesaj "reject_client_dup", 
+  prin care voi instiinta clientul ca in server exista deja un client cu acest 
+  nume, prin urmare conexiunea se va inchide, asteptand o noua conexiune cu alt 
+  nume. 
+  
+	Daca numele clientului nu exista, atunci voi trimite instiintare la 
+  client ca a fost acceptat de catre server. Prin urmare, s-a conectat la 
+  server. De asemenea, serverul va retine toate datele despre client. ( nume,
+  adresa ip, port, timpul conectarii, portul pe care asculta, fisiere partajate,
+  numar fisiere partajate).
+  
+	Dupa ce primul mesaj a fost trimis si clientul a fost acceptat de 
+  server, clientul poate trimite comenzile pe care le are la dispozitie.
+	Astfel, clientul dispune de comenzile:
+	
+    --- 1. "listclients" (tasks[0]) ---
+	
+	Clientul va trimite serverului un mesaj de forma: 
+  "name:nume_client:listclients", care va fi parsat in server. Cand serverul a 
+  primit acest mesaj, vom parsa "nume_client" si "listclients". Dupa aceea 
+  verific daca "listclients" corespunde cu o valoare din vectorul "tasks[]". 
+  Daca o sa corespunda, switch-ul va lua valoarea corespunzatoare "listclients"
+  ( adica 0). Voi trimite inapoi clientului un mesaj de forma:
+  "nume_comanda_ceruta:nume_client_conectat:adresa_ip:socket:port" cu informatii
+  despre toti clientii. 
+  
+	Cand clientul primeste mesaj de la server, parseaza 
+  "nume_comanda_ceruta" si cauta in "tasks[]" sa vada pe ce pozitie se afla. 
+  Dupa care, se va executa comanda, switch-ul luand valoarea corespunzatoare 
+  "listclients" (0). Voi parsa mesajul si voi afisa pentru fiecare client 
+  conectat la server urmatoarele informatii: nume_client, adresa_ip, socketul
+  (cel de la server), port.
+  
+    --- 2. "infoclient" (tasks[1]) ---
+    
+	Clientul va trimite serverului un mesaj de forma:
+  "name:nume_client:infoclient nume_client_info", care va fi parsat in server. 
+  Cand serverul a primit acest mesaj, vom parsa "nume_client" si "infoclient" si
+  "nume_client_info" (numele clientului pentru care doresc informatii).Dupa 
+  aceea verific daca "infoclient" corespunde cu o valoare din vectorul "tasks[]".
+  Daca o sa corespunda, switch-ul va lua valoarea corespunzatoare "infoclient"
+  ( adica 1). In server voi cauta prin toti clientii, clientul cu acelasi nume
+  ca "nume_client_info". Cand il voi gasi, voi cere timpul la care s-a realizat
+  aceasta cerere si voi face diferenta intre timpul conectarii si acest timp.
+  Dupa aceea, voi trimite in client un mesaj de forma: 
+  "nume_comanda_ceruta:nume_client_info:de_cat_timp_este_conectat:port_listen".
+  
+	Cand clientul primeste mesaj de la server, parseaza 
+  "nume_comanda_ceruta" si cauta in "tasks[]" sa vada pe ce pozitie se afla.
+  Dupa care, se va executa comanda, switch-ul luand valoarea corespunzatoare 
+  "infoclient" (1). Voi parsa mesajul si voi afisa numele clientului pentru care
+  am solicitat informatiile, de cat timp este el conectat ( timpul va fi afisat
+  in forma "h:min:sec") si portul pe care acesta asculta.
+  
+    --- 3. "message" (task[2]) ---
+    
+	Clientul va trimite serverului un mesaj de forma:
+  "name:nume_client:message client_send mesaj". Voi parsa "nume_client",
+  "message", "client_send" si "mesaj". Serverul va executa comanda "message",
+  switch-ul luand valoarea corespunzatoare "message"(2). Dupa aceea, voi cauta
+  prin clienti acel nume egal cu nume_client si retin pozitia sa. Voi mai
+  cauta inca o data prin clienti pentru a-l gasi pe cel cu numele client_send.
+  Cand l-am gasit, trimit inapoi clientului(nume_client) un mesaj cu 
+  urmatoarele informatii:
+  "nume_comanda_ceruta:nume_client:adresa_ip_client_send:port_pe_care_asculta_
+  client_send:mesaj".
+    
+	Astfel, clientul va primi de la server informatii cu care se va putea
+  conecta la clientul "client_send" pentru a-i trimite mesajul. Cand am primit
+  informatiile de la server, switch-ul va lua valoarea corespunzatoare
+  "message"(2). Voi parsa "nume_client", "adresa_ip_client_send", 
+  "port_pe_care_asculta_client_send" si "mesaj". Daca "client_send" nu este 
+  conectat la server, va afisa eroare. (daca numele client_send nu este pe
+  server).
+    
+	Daca este conectat la server, atunci "nume_client" se va conecta la 
+  "client_send" direct, avand "adresa_ip_client_send" si 
+  "port_pe_care_asculta_client_send" si ii va trimite un mesaj de forma 
+  "From de_la_cimesajulne_primeste_mesajul: mesaj".
+  
+	Clientul "client_send" va primi pe portul de ascultare acest mesaj.
+  (pe socket_listen). Aici voi parsa primul cuvant din mesaj. Daca acesta este
+  "From", inseamna ca am primit mesaj, prin urmare il voi afisa.
+  ( "From de_la_cine_primeste_mesajul: mesaj" ).
+  
+    --- 4. "sharefile" (tasks[3]) ---
+    
+	Clientul va trimite serverului un mesaj de forma:
+  "name:nume_client:sharefile nume_fisier", care va fi parsat in server.
+  In server, switch-ul va lua valoarea corespunzatoare "sharefile"(3).
+  Voi cauta prin toate fisierele partajate ale clientului "nume_client".
+  Daca nume_fisier == "", atunci se va afisa eroarea "nume inexistent". Daca
+  nume_fisier == nume_fisier_partajat_deja_de_client, atunci se va afisa eroarea
+  "Nume duplicat". Daca nume_fisier nu este duplicat si nici inexistent, atunci
+  voi adauga acest fisier la fisiere partajate de nume client, si voi trimite
+  mesaj la client de forma "nume_comanda_ceruta: succes", prin care il voi 
+  instiinta ca s-a partajat cu succes.
+  
+	Cand clientul primeste mesaj de la server, parseaza 
+  "sharefile" si cauta in "tasks[]" sa vada pe ce pozitie se afla.
+  Dupa care, se va executa comanda, switch-ul luand valoarea corespunzatoare 
+  "sharefile" (3). Astfel, va fi parsat mesajul de la server si se va afisa 
+  mesajul de succes, duplicat sau fisier inexistent.
+  
+    --- 5."unsharefile" (task[4]) ---
+    
+	Clientul va trimite serverului un mesaj de forma:
+  "name:nume_client:unsharefile nume_fisier", care va fi parsat in server.
+  In server, switch-ul va lua valoarea corespunzatoare "unsharefile"(4).
+  Voi cauta prin toate fisierele partajate ale clientului "nume_client". Daca 
+  nu am gasit un fisier "nume_fisier", atunci voi trimite catre client mesajul
+  de fisier inexistent. Daca am gasit fisierul "nume_fisier", il vom sterge
+  din lista de fisiere partajate si vom trimite la client mesajul 
+  "unsharefile: Fisierul a fost sters".
+      
+	Cand clientul primeste mesaj de la server, parseaza 
+  "unsharefile" si cauta in "tasks[]" sa vada pe ce pozitie se afla.
+   Dupa care, se va executa comanda, switch-ul luand valoarea corespunzatoare 
+  "unsharefile" (4). Astfel, va fi parsat mesajul de la server si se va afisa 
+  mesajul de succes sau fisier inexistent.
+    
+     --- 6."getshare" (task[5]) ---
+     
+	Clientul va trimite serverului un mesaj de forma:
+  "name:nume_client:getshare nume_client_inf_files", care va fi parsat in 
+  server. In server, switch-ul va lua valoarea corespunzatoare "getshare"(5).
+  Voi cauta prin toate fisierele partajate ale clientului 
+  "nume_client_inf_files". Daca acest client nu exista, se va trimite un mesaj
+  de eroare "getshare:Error. Numele clientului necunoascut.:". Daca acest client
+  exista, vom "getshare:nume_fisier_1:nume_fisier_2:...:nume_fisier_n".
+  
+	Cand clientul va primi mesaj de la server, parseaza "getshare" si va
+  executa aceasta comanda, switch-ul luand valoarea corespunzatoare "getshare"
+  (5). Dupa aceea, se vor parsa numele fisierelor pentru a fi afisate.
+	
+    --- 7."getfile" (task[7]) ---
+    
+	Clientul va trimite serverului un mesaj de forma:
+  "name:nume_client:getfile nume_client_from nume_fisier", care va fi parsat
+  in server. Voi cauta in lista cu clienti clientul cu numele "nume_client", 
+  dupa care voi cauta iar in lista clientilor numele "nume_client_from" si voi
+  verifica daca "nume_fisier" se afla in lista lui cu fisiere partajate.
+  Daca fisierul sau clientul nu exista, voi trimite mesaj de eroare. 
+  ("getfile:Error: Clientul nu este conectat la server sau fisierul nu 
+  este partajat"). 
+  Daca atat clientul de la care descarcam, cat si fisierul de descarcat exista,
+  voi trimite la client urmatorul mesaj:
+  "getfile:nume_client:adresa_ip_nume_client:port_listen_nume_client:
+   adresa_ip_nume_client_from:port_listen_nume_client_from".
+   
+	Clientul va primi acest mesaj, pe care il va parsa, switch-ul luand 
+  valoarea 7 (corespunzatoare "getfile"). De asemenea, toate atributele aflate
+  intre ":" vor fi parsate. Clientul se va conecta la 
+  "adresa_ip_nume_client_from" si "port_listen_nume_client_from". ( se va 
+  conecta la clientul de unde va descarca fisierul) si ii va trimite urmatorul
+  mesaj: "File nume_fisier:adresa_ip_to_send:port_to_send:". (mesajul contine
+  numele fisierului pe care il va trimite inapoi la adresa_ip_to_send, 
+  port_to_send).
+  
+	(Voi denumi clientul care are fisierul pe care doresc sa il descarc 
+  astfel: Client_2)
+    
+	Astfel, Client_2 va primi pe socketul de ascultare un mesaj ce incepe 
+  cu "File". ( aici voi parsa mesajul si voi compara primul string parsat cu
+  "File"). Acum, voi deschide fisierul "nume_fisier". Dupa care, ma voi
+  conecta la clientul cu adresa ip: "adresa_ip_to_send" si cu portul
+  de ascultare: "port_to_send". 
+  
+	Ii voi trimite mai intai mesaj sa deschida un fisier (in care se va 
+  scrie ce se primeste): "Open nume_fisier".	(acesta va primi pe socketul de 
+  ascultare acest mesaj si il va parsa, comparand primul string parsat cu "Open" 
+  si va deschide un fisier cu numele:	share_"nume_fisier".
+  
+	Dupa aceea, voi trimite datele din fisier. Mesajul va fi de forma:
+  "File_send date_trimise". ( Cand se primeste "File_send" va sti ca sunt 
+  date trimise din fisier si va scrie in fisier "date_trimise").
+  
+	Dupa ce a terminat de citit din fisier Client_2, va trimite un mesaj
+  "Close nume_fisier". ( Astfel clientul care a descarcat va trebui sa inchida
+  fisierul in care a scris ( share_"nume_fisier" ).
+  
+	Astfel, fisierul a fost transferat.
+	
+    --- 8."quit" (task[6]) ---
+    
+	Clientul ii va trimite serverului mesajul: "name:nume_client:quit".
+  Serverul va parsa mesajul si va intra pe switch-ul cu valoarea 6 ("quit").
+  Aici va trimite mesaj la client ca aceta a parasit serverul, dupa care va
+  inchide conexiunile. De asemenea, clientul va inchide toate conexiunile pe 
+  care le are deschise si va iesi (return).
+  
+    --- 9."status" ---
+
+	Daca serverul "observa" ca de la tastatura s-a introdus comanda
+  "status", atunci va afisa informatii despre toti clientii conectati.
+  (Nume client, IP, socket pe care sunt conectati, port si fisierele partajate).
+  
+    --- 10. "quit" ---
+    
+	Daca serverul "observa" ca de la tastatura s-a introdus comanda "quit",
+  va inchide toate conexiunile pe care le are si va iesi (return).
+    
+      
+      
+    

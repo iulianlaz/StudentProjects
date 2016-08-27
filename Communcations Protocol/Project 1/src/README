@@ -1,0 +1,76 @@
+/* Lazar Iulian
+ * 
+ * grupa: 325 CA
+ * 
+ * Tema 1 PC
+ */ 
+
+      Pentru rezolvarea acestei teme am implementat protocolul "Go back n".
+      In primul rand, in fisierul "send.c", in main am extras parametri speed,
+delay, loss si corrupt. Dupa aceea, am calculat "maximum window size", dupa 
+urmatoarea formula: w = ((delay * speed * 1000) / (1400*8)).
+
+      In functia "send_file" am creat un buffer "frame" de dimensiune 
+max_seq ( egal cu "w" ( maximum window size)). Variabila "index" reprezinta
+cadrul de trimis, iar "conf_frame" urmatorul cadru de confirmat.
+
+      Prima data vom trimite numele fisierului si marimea acestuia. La 
+sfarsitul "payload"-ului vom adauga: "index" (cadrul trimis - pentru a face 
+verificarea in receiver daca s-a primit cadrul asteptat) si "max_seq" ( maximum
+window size). Dupa aceea vom pune mesajul in bufferul frame[index], setand
+"len" la lungimea efectiva a mesajului (in "len" nu intra si lungimea indexului
+si lungimea max_seq, deoarece imi va fi mai usor de prelucrat mesajul la 
+receiver). Acum vom trimite efectiv valoarea din buffer: 
+"send_message(&frame[index])". Dupa aceea, vom astepta confirmare pentru 
+mesajul trimis.
+
+      Daca s-a primit confirmarea, aceasta este de tipul type == 5 ( tipul 5 
+l-am definit in receiver ca avand in componenta sa si "receiver window size"), 
+astfel vom compara max_seq ( care este maximum window size din sender) cu 
+window ( receiver window size) si daca: 
+((window < max_seq) && ( window != 0) atunci max_seq = window. ( astfel
+am domolit transmitatorul rapid).
+
+     Daca nu s-a primit confirmarea, trimite din nou mesajul pana cand va
+primi confirmare.
+
+      Pentru citirea fisierului vom avea o bucla infinita care va citi pana
+cand tot fisierul a fost trimis si toate confirmarile au ajuns inapoi. Vom citi
+din fisier cate 1380B pana cand s-a ajuns la dimensiunea maxima a ferestrei. 
+La sfarsitul "payload"-ului vom adauga: "index" (cadrul de trimis),dupa care 
+vom pune mesajul in buffer-ul frame[index] si vom trimite mesajul 
+"send_message(&frame[index])" ( dupa aceea vom incrementa indexul ( daca va fi 
+mai mare decat dimensiunea maxima a ferestrei il vom seta la 0)).
+
+      Dupa ce s-a ajuns la dimensiunea maxima a ferestrei, se va opri din 
+trimis si vom astepta confirmarile pentru mesajele trimise. Daca ("loss" == 0),
+vom sti ca mesajul va fi primit cu siguranta, deci nu vom avea nevoie de 
+timeout. In caz contrar, vom avea nevoie de un timeout ( care va fi egal cu 
+"delay" + epsilon (constanta destul de mica) (nu stiu daca este corecta, dar nu
+stiam altceva), deoarece daca mesajul nu a ajuns la receiver nu vom primi ACK, 
+prin urmare mesajul nu va fi confirmat si va trebui sa retrimitem de la mesajul 
+neconfirmat pana la toate mesajele care au fost in fereastra.
+
+      Daca mesajul a fost confirmat, atunci vom incrementa "conf_frame" 
+( urmatorul cadru de confirmat ( daca va fi mai mare decat dimensiunea maxima 
+a ferestrei il vom seta la 0)). Daca conf_frame == index ( urmatorul cadru
+de confirmat este egal cu cadrul de trimis), atunci inseamna ca s-a ajuns la 
+final, adica toate mesajele trimise au fost confirmate, prin urmare vom incheia
+transferul. Daca nu s-a ajuns la final, dupa ce un cadru a fost confirmat,
+un alt mesaj va fi trimis.
+
+      In "recv.c" vom extrage mai intai parametrul "window", dupa care vom
+astepta un mesaj de tipul 1 (type = 1 - Numele fisierului si dimensiunea 
+acestuia). In acest mesaj, vom avea si numarul cadrului sosit si dimensiunea
+ maxima a ferestrei din sender. Vom extrage cadrul sosit si dimensiunea 
+maxima. Pentru acest mesaj vom trimite ACK ( cu type = 5, deoarece aici ii 
+vom trimite si variabila "window" pentru a face minimul dintre "window" si 
+"max_seq" ( pentru domolirea vitezei).
+
+    Dupa aceea, vom astepta mesaje de tip 2 cat timp marimea fisierului este 
+> 0. In receiver avem un "index" (cadrul asteptat), pe care il vom compara cu
+cadrul sosit. Daca acest index == cadrul sosit atunci vom trimite ACK de 
+confirmare pentru cadrul sosit si vom incrementa "index" (cadrul asteptat), 
+altfel inseamna ca a sosit un alt cadru si nu vom trimite confirmare pentru el,
+deoarece cadrele se vor trimite in ordine.
+
