@@ -1,0 +1,55 @@
+/**
+ * Nume: Lazar Iulian 343C1
+ * Materia: Programare Web
+ * Tema 2: Baza de date & PHP
+ * Data: 29.03.2014
+ */
+
+******************
+*** Observatii ***
+******************
+
+*Observatie 1* - Versiunea temei este cea cu bonus.
+*Observatie 2* - Fisierul db.sqlite trebuie sa aiba permisiuni de scriere, 
+				 citire si executie (777).
+*Observatie 3* - In arhiva este inclus si folderul cu checkerul pentru varianta
+		 implementata cu bonus. Pentru ca acesta sa functioneze, toate
+		 fisierele/folderele din arhiva trebuie incluse intr-un folder 
+		 cu numele "pw-tema2" si pus intr-un folder dedicat 
+		 (ex. /opt/lampp/htdocs). Acesta trebuie sa aiba de asemenea 
+		 permisiuni 777. La rularea acestui checker obtin urmatorul 
+		 punctaj: 0.70.
+
+****************************
+*** Structura fisierelor ***
+****************************
+1. Fisierele php cerute:
+	- register.php
+	- login.php
+	- category.php
+	- edit-article.php
+	- article.php
+	- show-entries.php
+	- search.php
+
+2. Fisiere auxiliare ajutatoare:
+	- util.php - configurare baza de date si definire constante si functii ajutatoare
+	- populateDb.sh - creeaza tabelele in db.sqlite si importa csv-urile din 
+			  folderul csv/ in tabelele nou create
+	- folderul csv/ - folderul cu csv-urile (din care s-au eliminat liniile cu 
+			  numele coloanelor)
+	- import.sqlite - importa in db.sqlite datele din folderul csv/
+	- create_tables.php - La rulare se vor crea tabelele in db.sqlite
+	- idiorm.php
+	- db.sqlite - baza de date
+
+*******************************************
+*** Adaugarea tabelelor in baza de date ***
+*******************************************
+	Pentru crearea tabelelor si popularea acestora cu datele din folderul csv
+ se va rula: 
+ 	- sh populateDb.sh
+	Acest script va crea tabelele si va importa datele din folderul csv in 
+ aceste tabele.
+ 	Daca se doreste numai crearea tabelelor fara importul datelor, se pot
+ comenta liniile 3 si 4.

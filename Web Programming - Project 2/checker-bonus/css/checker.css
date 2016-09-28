@@ -1,0 +1,5 @@
+body { padding: 25px; }
+.task { display: none; }
+.score { display: none; }
+.passed { display: none; }
+.failed { display: none; }

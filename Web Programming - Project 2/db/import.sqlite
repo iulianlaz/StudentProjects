@@ -1,0 +1,5 @@
+.separator ','
+.import './csv/pw_user.csv' pw_user
+.import './csv/pw_article.csv' pw_article
+.import './csv/pw_category.csv' pw_category
+.import './csv/pw_article_category.csv' pw_article_category
